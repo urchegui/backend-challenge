@@ -4,6 +4,7 @@ import { getJobForTaskType } from "../jobs/JobFactory";
 import { WorkflowStatus } from "../workflows/WorkflowFactory";
 import { Workflow } from "../models/Workflow";
 import { Result } from "../models/Result";
+import { In } from "typeorm";
 
 export enum TaskStatus {
   Queued = "queued",
@@ -34,12 +35,6 @@ export class TaskRunner {
         const dependency = await this.taskRepository.findOneBy({
           taskId: task.dependsOnTaskId,
         });
-        if (!dependency || dependency.status !== TaskStatus.Completed) {
-          console.log(
-            `Task ${task.taskId} is waiting for dependency ${task.dependsOnTaskId}`
-          );
-          return;
-        }
       }
       const taskResult = await job.run(task);
       console.log(
@@ -85,6 +80,16 @@ export class TaskRunner {
         currentWorkflow.status = WorkflowStatus.Failed;
       } else if (allCompleted) {
         currentWorkflow.status = WorkflowStatus.Completed;
+        const result = await this.taskRepository.manager
+          .getRepository(Result)
+          .find({
+            where: {
+              taskId: In(currentWorkflow.tasks.map((data) => data.taskId)),
+            },
+          });
+        currentWorkflow.finalResult = JSON.stringify(
+          result.map((prop) => JSON.parse(prop.data ?? "{}"))
+        );
       } else {
         currentWorkflow.status = WorkflowStatus.InProgress;
       }

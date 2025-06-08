@@ -8,6 +8,7 @@ import { AppDataSource } from "./data-source"; // Import the DataSource instance
 const app = express();
 app.use(express.json());
 app.use("/analysis", analysisRoutes);
+app.use("/workflow/:id/status", analysisRoutes);
 app.use("/", defaultRoute);
 
 AppDataSource.initialize()
