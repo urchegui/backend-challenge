@@ -18,7 +18,8 @@ router.get("/:id/status", async (req, res) => {
   });
 
   if (!getWorkflow) {
-    return res.status(404);
+    res.status(404).json({ error: "workflow not found" });
+    return;
   }
 
   const getTasks = await taskRepo.find({
@@ -32,7 +33,7 @@ router.get("/:id/status", async (req, res) => {
     (data) => data.status === "completed"
   ).length;
 
-  return res.json({
+  res.json({
     workflowId: getWorkflow.workflowId,
     status: getWorkflow.status,
     completed,
@@ -52,20 +53,21 @@ router.get("/:id/results", async (req, res) => {
     });
 
     if (!workflow) {
-      return res.status(404);
+      res.status(404).json({ error: "workflow not found" });
+      return;
     }
 
     if (workflow.status !== "completed") {
-      return res.status(400);
+      res.status(400).json({ error: "Workflow not completed yet" });
     }
 
-    return res.json({
+    res.json({
       workflowId: workflow.workflowId,
       status: workflow.status,
       finalResult: workflow.finalResult,
     });
   } catch (error: any) {
-    res.status(500);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
